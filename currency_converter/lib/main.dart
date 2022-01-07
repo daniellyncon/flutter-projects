@@ -1,115 +1,176 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:async';
+import 'dart:convert';
+
+// const apiUrl = 'https://api.hgbrasil.com/finance?format=json&key=60df7606';
 
 void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
-
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
+  runApp(
+    MaterialApp(
+      home: const ConverterHome(),
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-        primarySwatch: Colors.blue,
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key, required this.title}) : super(key: key);
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-          ],
+        hintColor: Colors.amber,
+        primaryColor: Colors.white,
+        inputDecorationTheme: const InputDecorationTheme(
+          enabledBorder:
+              OutlineInputBorder(borderSide: BorderSide(color: Colors.white)),
+          focusedBorder:
+              OutlineInputBorder(borderSide: BorderSide(color: Colors.amber)),
+          hintStyle: TextStyle(color: Colors.amber),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+    ),
+  );
+}
+
+Future<Map> getData() async {
+  var url = Uri.parse('https://api.hgbrasil.com/finance');
+  var response = await http.get(url);
+  return json.decode(response.body);
+}
+
+class ConverterHome extends StatefulWidget {
+  const ConverterHome({Key? key}) : super(key: key);
+
+  @override
+  _ConverterHomeState createState() => _ConverterHomeState();
+}
+
+class _ConverterHomeState extends State<ConverterHome> {
+  final realController = TextEditingController();
+  final dollarController = TextEditingController();
+  final euroController = TextEditingController();
+
+  late double dollar;
+  late double euro;
+
+  void _onRealChange(String text) {
+    if(text.isEmpty) {
+      return;
+    }
+    double real = double.parse(text);
+    dollarController.text = (real/dollar).toStringAsFixed(2);
+    euroController.text = (real/euro).toStringAsFixed(2);
+  }
+
+  void _onDollarChange(String text) {
+    if(text.isEmpty) {
+      return;
+    }
+    double dollar = double.parse(text);
+    realController.text = (dollar * this.dollar).toStringAsFixed(2);
+    euroController.text = (dollar * this.dollar / euro).toStringAsFixed(2);
+  }
+
+  void _onEuroChange(String text) {
+    if(text.isEmpty) {
+      return;
+    }
+    double euro = double.parse(text);
+    realController.text = (euro * this.euro).toStringAsFixed(2);
+    dollarController.text = (euro * this.euro / dollar).toStringAsFixed(2);
+  }
+
+  void _clearAll(){
+    realController.text = "";
+    dollarController.text = "";
+    euroController.text = "";
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        title: const Text(
+          '\$ Converter \$',
+          style: TextStyle(
+            color: Colors.black,
+          ),
+        ),
+        backgroundColor: Colors.amber,
+        centerTitle: true,
+      ),
+      body: FutureBuilder<Map>(
+        future: getData(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return const Center(
+              child: Text(
+                'Erro ao carregar dados :(',
+                style: TextStyle(
+                  color: Colors.amber,
+                  fontSize: 25.0,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            );
+          }
+
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(
+              child: Text(
+                'Loading data...',
+                style: TextStyle(
+                  color: Colors.amber,
+                  fontSize: 25.0,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            );
+          }
+
+          if (snapshot.data != null) {
+            dollar = (snapshot.data!['results']['currencies']['USD']['buy']);
+            euro = (snapshot.data!['results']['currencies']['EUR']['buy']);
+          }
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(15.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Icon(
+                  Icons.monetization_on,
+                  size: 150.0,
+                  color: Colors.amber,
+                ),
+                buildTextField('Reais', 'R\$', realController, _onRealChange),
+                const Divider(),
+                buildTextField('Dollars', 'US\$', dollarController, _onDollarChange),
+                const Divider(),
+                buildTextField('Euros', '€', euroController, _onEuroChange),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
+}
+
+Widget buildTextField(
+  String label,
+  String prefix,
+  TextEditingController textEditingController,
+  void Function(String string) function,
+) {
+  return TextField(
+    controller: textEditingController,
+    onChanged: function,
+    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+    style: const TextStyle(
+      color: Colors.amber,
+      fontSize: 25.0,
+    ),
+    decoration: InputDecoration(
+      border: InputBorder.none,
+      prefixText: prefix,
+      labelText: label,
+      labelStyle: const TextStyle(
+        color: Colors.amber,
+      ),
+    ),
+  );
 }
