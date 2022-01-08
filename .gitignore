@@ -20,4 +20,4 @@ doc/api/
 *.js.deps
 *.js.map
 
-*/lib/giphy_api
+gif_seach_share/lib/giphy_api
